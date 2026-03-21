@@ -101,7 +101,7 @@ export const bloques = {
       "1 huevo + 110g pavo cocido + 75g atún natural",
       "1 huevo + 95g pavo cocido + 2 quesos frescos 0%"
     ],
-    extra: [
+    verduras: [
       "Ensalada",
       "Verduras/hortalizas"
     ],
