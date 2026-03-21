@@ -86,11 +86,13 @@ function PlanDia({ volver }) {
   };
 
   return (
-    <div style={{
-      padding: 20,
-      backgroundColor: "#f2f2f7",
-      minHeight: "100vh"
-    }}>
+    <div
+      style={{
+        padding: 20,
+        backgroundColor: "#f2f2f7",
+        minHeight: "100vh"
+      }}
+    >
       {/* VOLVER */}
       <button onClick={volver} style={botonVolver}>
         ← Volver
@@ -106,7 +108,7 @@ function PlanDia({ volver }) {
         return (
           <div key={index} style={{ marginTop: 15 }}>
             
-            {/* HEADER BLOQUE */}
+            {/* HEADER */}
             <Card onClick={() => toggleBloque(item.nombre, index)}>
               <span>
                 {item.nombre} ({item.hora})
@@ -124,7 +126,21 @@ function PlanDia({ volver }) {
             {/* CONTENIDO */}
             {abierto && (
               <div style={{ marginTop: 10 }}>
-                {datos.proteina && (
+
+                {/* 🔥 CASO ESPECIAL: BLOQUE EXTRA */}
+                {item.nombre === "extra" && (
+                  <Bloque
+                    titulo="Extra"
+                    opciones={bloques.extra}
+                    valor={selecciones[item.nombre]?.extra}
+                    setValor={(v) =>
+                      actualizar(item.nombre, "extra", v)
+                    }
+                  />
+                )}
+
+                {/* PROTEÍNA */}
+                {datos?.proteina && (
                   <Bloque
                     titulo="Proteína"
                     opciones={datos.proteina}
@@ -135,7 +151,8 @@ function PlanDia({ volver }) {
                   />
                 )}
 
-                {datos.carbo && (
+                {/* CARBO */}
+                {datos?.carbo && (
                   <Bloque
                     titulo="Carbohidrato"
                     opciones={datos.carbo}
@@ -146,7 +163,8 @@ function PlanDia({ volver }) {
                   />
                 )}
 
-                {datos.grasa && (
+                {/* GRASA */}
+                {datos?.grasa && (
                   <Bloque
                     titulo="Grasa"
                     opciones={datos.grasa}
@@ -157,16 +175,18 @@ function PlanDia({ volver }) {
                   />
                 )}
 
-                {datos.extra && (
+                {/* VERDURAS */}
+                {datos?.verduras && (
                   <Bloque
                     titulo="Verduras"
-                    opciones={datos.extra}
-                    valor={selecciones[item.nombre]?.extra}
+                    opciones={datos.verduras}
+                    valor={selecciones[item.nombre]?.verduras}
                     setValor={(v) =>
                       actualizar(item.nombre, "verduras", v)
                     }
                   />
                 )}
+
               </div>
             )}
           </div>
