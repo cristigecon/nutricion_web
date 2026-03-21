@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { bloques, estructuraDias } from "../data/plan";
-
 import Bloque from "../components/Bloque";
 import CheckCircle from "../components/CheckCircle";
 import Card from "../components/Card";
@@ -154,6 +153,17 @@ function PlanDia({ volver }) {
                     valor={selecciones[item.nombre]?.grasa}
                     setValor={(v) =>
                       actualizar(item.nombre, "grasa", v)
+                    }
+                  />
+                )}
+
+                {datos.extra && (
+                  <Bloque
+                    titulo="Verduras"
+                    opciones={datos.extra}
+                    valor={selecciones[item.nombre]?.extra}
+                    setValor={(v) =>
+                      actualizar(item.nombre, "verduras", v)
                     }
                   />
                 )}
