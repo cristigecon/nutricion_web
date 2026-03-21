@@ -1,5 +1,4 @@
 {
-  "homepage": "https://cgegun.github.io/nutricion_web",
   "name": "nutricion-web",
   "version": "0.1.0",
   "private": true,
@@ -15,7 +14,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "CI=false react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
