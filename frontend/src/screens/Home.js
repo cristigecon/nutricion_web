@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { estructuraDias } from "../data/plan";
+import { getEstructuraDia } from "../services/mealPlan";
 import CheckCircle from "../components/CheckCircle";
 import Card from "../components/Card";
 import { useAuth } from "../context/AuthContext";
@@ -7,7 +7,6 @@ import { theme } from "../styles/theme";
 import { calcularStreak } from "../utils/streak";
 import Confetti from "../components/Confetti";
 import {
-  getDay,
   getMealChecks,
   getAgenda,
   getEntrenoCheck,
@@ -23,9 +22,7 @@ function getFechaHoy() {
 function Home({ setPantalla }) {
   const { user, logout, syncStatus, syncError, lastSyncedAt, runSync } = useAuth();
   const fecha = getFechaHoy();
-
-  const data = getDay(fecha) || {};
-  const tipo = data.tipo || "entrenamiento";
+  const estructuraDia = getEstructuraDia(fecha);
 
   const checks = getMealChecks(fecha);
 
@@ -47,12 +44,8 @@ function Home({ setPantalla }) {
   const streak = calcularStreak();
 
   // progreso comidas
-  let completados = 0;
-  const total = estructuraDias[tipo]?.length || 0;
-
-  estructuraDias[tipo]?.forEach((item) => {
-    if (checks[item.nombre]) completados++;
-  });
+  const completados = Object.values(checks || {}).filter(Boolean).length;
+  const total = estructuraDia.length;
 
   const totalFinal = total + 2;
 
@@ -102,6 +95,16 @@ function Home({ setPantalla }) {
       label: "Sincronizado",
       backgroundColor: "#edf8ef",
       color: theme.colors.success,
+    },
+    pending: {
+      label: "Sync pendiente",
+      backgroundColor: "#fff7e8",
+      color: "#9a6700",
+    },
+    offline: {
+      label: "Sin conexion",
+      backgroundColor: "#fff7e8",
+      color: "#9a6700",
     },
     error: {
       label: "Error de sync",
@@ -337,6 +340,21 @@ function Home({ setPantalla }) {
                 </div>
                 <div style={{ fontSize: 13, color: theme.colors.subtext }}>
                   Ver progreso
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <Card onClick={() => setPantalla("admin")}>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <div style={icon("#111827")}>A</div>
+
+              <div>
+                <div style={{ fontWeight: "600" }}>
+                  Admin
+                </div>
+                <div style={{ fontSize: 13, color: theme.colors.subtext }}>
+                  Editar planes
                 </div>
               </div>
             </div>

@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { entrenamientos } from "../data/entrenamientos";
 import {
   getWorkoutByDate,
   saveWorkoutByDate,
@@ -7,13 +6,15 @@ import {
   setCardio as setCardioStorage,
   getEntrenoCheck,
   setEntrenoCheck,
-  getAgenda
+  getAgenda,
 } from "../services/storage";
-
+import {
+  formatRoutineForWorkout,
+  getTrainingRoutines,
+} from "../services/trainingPlan";
 import BotonGuardar from "../components/BotonGuardar";
 import Boton from "../components/Boton";
 import Section from "../components/Section";
-
 import {
   botonVolver,
   cardEjercicio,
@@ -21,7 +22,7 @@ import {
   inputTitulo,
   fila,
   inputSerie,
-  botonSerie
+  botonSerie,
 } from "../styles/styles";
 
 function getFechaHoy() {
@@ -29,33 +30,40 @@ function getFechaHoy() {
   return hoy.toISOString().split("T")[0];
 }
 
+const nombres = {
+  inferior: "Tren inferior + abdomen",
+  superior: "Tren superior",
+  descanso: "Descanso",
+};
+
+const metricBadge = {
+  display: "inline-flex",
+  alignItems: "center",
+  padding: "6px 10px",
+  borderRadius: 999,
+  backgroundColor: "#eef2f7",
+  color: "#4d5b6b",
+  fontSize: 12,
+  fontWeight: "600",
+};
+
 function Entrenamiento({ volver }) {
   const fecha = getFechaHoy();
-
+  const trainingRoutines = getTrainingRoutines();
   const datosGuardados = getWorkoutByDate(fecha) || [];
 
   const [ejercicios, setEjercicios] = useState(datosGuardados);
   const [tipo, setTipo] = useState("inferior");
-
   const [cardio, setCardio] = useState(getCardio(fecha));
-
   const [entrenoHecho, setEntrenoHecho] = useState(getEntrenoCheck(fecha));
 
   const diaSemana = new Date()
     .toLocaleDateString("es-ES", { weekday: "long" });
 
   const agenda = getAgenda();
-
   const datosDia = agenda[diaSemana] || {};
-
   const tipoAuto = datosDia.entreno;
   const cardioAuto = datosDia.cardio;
-
-  const nombres = {
-    inferior: "Tren inferior + abdomen",
-    superior: "Tren superior",
-    descanso: "Descanso"
-  };
 
   useEffect(() => {
     if (cardioAuto && !cardio) {
@@ -67,21 +75,12 @@ function Entrenamiento({ volver }) {
     if (ejercicios.length > 0) return;
     if (!tipoAuto || tipoAuto === "descanso") return;
 
-    const rutina = entrenamientos[tipoAuto];
+    const rutina = trainingRoutines[tipoAuto];
     if (!rutina) return;
 
-    const formateado = rutina.map((ej) => ({
-      nombre: ej.nombre,
-      imagen: ej.imagen,
-      series: Array.from({ length: ej.series }).map(() => ({
-        reps: ej.reps,
-        peso: ""
-      }))
-    }));
-
-    setEjercicios(formateado);
+    setEjercicios(formatRoutineForWorkout(rutina));
     setTipo(tipoAuto);
-  }, [ejercicios.length, tipoAuto]);
+  }, [ejercicios.length, tipoAuto, trainingRoutines]);
 
   const cargarRutina = (tipoSeleccionado) => {
     if (tipoSeleccionado === "descanso") {
@@ -90,18 +89,13 @@ function Entrenamiento({ volver }) {
       return;
     }
 
-    const rutina = entrenamientos[tipoSeleccionado];
+    const rutina = trainingRoutines[tipoSeleccionado];
+    if (!rutina) {
+      setEjercicios([]);
+      return;
+    }
 
-    const formateado = rutina.map((ej) => ({
-      nombre: ej.nombre,
-      imagen: ej.imagen,
-      series: Array.from({ length: ej.series }).map(() => ({
-        reps: ej.reps,
-        peso: ""
-      }))
-    }));
-
-    setEjercicios(formateado);
+    setEjercicios(formatRoutineForWorkout(rutina));
     setTipo(tipoSeleccionado);
   };
 
@@ -117,7 +111,7 @@ function Entrenamiento({ volver }) {
     setEjercicios(copia);
   };
 
-  const añadirSerie = (index) => {
+  const anadirSerie = (index) => {
     const copia = [...ejercicios];
     copia[index].series.push({ reps: "", peso: "" });
     setEjercicios(copia);
@@ -126,7 +120,6 @@ function Entrenamiento({ volver }) {
   const toggleEntreno = () => {
     const nuevo = !entrenoHecho;
     setEntrenoHecho(nuevo);
-
     setEntrenoCheck(fecha, nuevo);
   };
 
@@ -136,11 +129,13 @@ function Entrenamiento({ volver }) {
   };
 
   return (
-    <div style={{
-      padding: 20,
-      backgroundColor: "#f2f2f7",
-      minHeight: "100vh"
-    }}>
+    <div
+      style={{
+        padding: 20,
+        backgroundColor: "#f2f2f7",
+        minHeight: "100vh",
+      }}
+    >
       <button onClick={volver} style={botonVolver}>
         ← Volver
       </button>
@@ -151,95 +146,139 @@ function Entrenamiento({ volver }) {
         Hoy toca: {nombres[tipoAuto] || "Sin plan"}
       </p>
 
-      {/* SELECTOR */}
       <Section titulo="Tipo de entrenamiento">
         <div style={{ display: "flex", gap: 10 }}>
           <Boton
             activo={tipo === "inferior"}
             onClick={() => cargarRutina("inferior")}
           >
-            🦵 Inferior
+            Inferior
           </Boton>
 
           <Boton
             activo={tipo === "superior"}
             onClick={() => cargarRutina("superior")}
           >
-            💪 Superior
+            Superior
           </Boton>
         </div>
       </Section>
 
-      {/* EJERCICIOS */}
       {ejercicios.map((ej, i) => (
-        <div key={i} style={cardEjercicio}>
-          {ej.imagen && (
-            <div style={imagenBox}>
-              <img
-                src={ej.imagen}
-                alt={ej.nombre}
-                style={{
-                  maxHeight: 120,
-                  objectFit: "contain"
-                }}
-              />
+        <div key={`${ej.nombre}-${i}`} style={cardEjercicio}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 10,
+              gap: 10,
+            }}
+          >
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                padding: "6px 10px",
+                borderRadius: 999,
+                backgroundColor: "#eef6ff",
+                color: "#007AFF",
+                fontSize: 12,
+                fontWeight: "700",
+              }}
+            >
+              Ejercicio {i + 1}
             </div>
-          )}
+            <div
+              style={{
+                fontSize: 12,
+                color: "#6b7280",
+                fontWeight: "600",
+              }}
+            >
+              {tipo === "superior" ? "Superior" : "Inferior"}
+            </div>
+          </div>
+
+          <div style={imagenBox}>
+            <img
+              src={ej.imagen || "/img/exercise-placeholder.svg"}
+              alt={ej.nombre}
+              style={{
+                maxHeight: 120,
+                objectFit: "contain",
+              }}
+            />
+          </div>
 
           <input
             value={ej.nombre}
-            onChange={(e) =>
-              actualizarEjercicio(i, "nombre", e.target.value)
-            }
+            onChange={(event) => actualizarEjercicio(i, "nombre", event.target.value)}
             style={inputTitulo}
           />
 
+          <div
+            style={{
+              marginBottom: 10,
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 8,
+            }}
+          >
+            <span style={metricBadge}>Series: {ej.series.length}</span>
+            <span style={metricBadge}>
+              Reps objetivo: {ej.series[0]?.reps || "-"}
+            </span>
+            <span style={metricBadge}>Cadencia: {ej.cadencia || "-"}</span>
+            <span style={metricBadge}>Descanso: {ej.descanso || "-"} s</span>
+          </div>
+
           {ej.series.map((serie, j) => (
-            <div key={j} style={fila}>
+            <div key={`${ej.nombre}-serie-${j}`} style={fila}>
               <input
                 value={serie.reps}
-                onChange={(e) =>
-                  actualizarSerie(i, j, "reps", e.target.value)
+                onChange={(event) =>
+                  actualizarSerie(i, j, "reps", event.target.value)
                 }
                 style={inputSerie}
+                placeholder="Reps"
               />
 
               <input
                 value={serie.peso}
-                onChange={(e) =>
-                  actualizarSerie(i, j, "peso", e.target.value)
+                onChange={(event) =>
+                  actualizarSerie(i, j, "peso", event.target.value)
                 }
                 style={inputSerie}
+                placeholder="Peso"
               />
             </div>
           ))}
 
           <button
-            onClick={() => añadirSerie(i)}
+            onClick={() => anadirSerie(i)}
             style={botonSerie}
           >
-            + Añadir serie
+            + Anadir serie
           </button>
         </div>
       ))}
 
-      {/* ENTRENAMIENTO CHECK */}
-      <Section titulo="🏋️ Entrenamiento">
+      <Section titulo="Entrenamiento">
         <Boton
           activo={entrenoHecho}
           onClick={toggleEntreno}
         >
-          {entrenoHecho ? "✔️ Completado" : "Marcar entrenamiento"}
+          {entrenoHecho ? "Completado" : "Marcar entrenamiento"}
         </Boton>
       </Section>
 
-      {/* CARDIO */}
-      <Section titulo="🔥 Cardio">
+      <Section titulo="Cardio">
         <Boton
           activo={cardio}
           onClick={() => setCardio(!cardio)}
         >
-          {cardio ? "✔️ Completado" : "Marcar cardio"}
+          {cardio ? "Completado" : "Marcar cardio"}
         </Boton>
       </Section>
 

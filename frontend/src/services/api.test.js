@@ -1,9 +1,14 @@
 import {
   clearSession,
   fetchWithAuth,
+  getMealPlanRequest,
+  getTrainingPlanRequest,
   loginRequest,
 } from "./api";
 import * as storage from "./storage";
+
+const API_BASE_URL =
+  process.env.REACT_APP_API_URL?.replace(/\/$/, "") || "http://localhost:5000";
 
 describe("api service", () => {
   beforeEach(() => {
@@ -25,7 +30,7 @@ describe("api service", () => {
     await fetchWithAuth("/api/days", { method: "GET" });
 
     expect(global.fetch).toHaveBeenCalledWith(
-      "http://localhost:5000/api/days",
+      `${API_BASE_URL}/api/days`,
       expect.objectContaining({
         method: "GET",
         headers: expect.objectContaining({
@@ -69,5 +74,45 @@ describe("api service", () => {
 
     expect(storage.removeAuthToken).toHaveBeenCalled();
     expect(storage.removeUser).toHaveBeenCalled();
+  });
+
+  it("solicita el plan maestro autenticado", async () => {
+    jest.spyOn(storage, "getAuthToken").mockReturnValue("token-123");
+    global.fetch.mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify({ mealPlan: { estructuraDias: {}, bloques: {} } }),
+    });
+
+    await getMealPlanRequest();
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      `${API_BASE_URL}/api/meal-plan`,
+      expect.objectContaining({
+        method: "GET",
+        headers: expect.objectContaining({
+          Authorization: "Bearer token-123",
+        }),
+      })
+    );
+  });
+
+  it("solicita la rutina maestra autenticada", async () => {
+    jest.spyOn(storage, "getAuthToken").mockReturnValue("token-123");
+    global.fetch.mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify({ trainingPlan: { routines: {} } }),
+    });
+
+    await getTrainingPlanRequest();
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      `${API_BASE_URL}/api/training-plan`,
+      expect.objectContaining({
+        method: "GET",
+        headers: expect.objectContaining({
+          Authorization: "Bearer token-123",
+        }),
+      })
+    );
   });
 });

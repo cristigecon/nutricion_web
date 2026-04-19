@@ -105,3 +105,25 @@ export const updateWeeklyPlanRequest = async (payload) => {
     body: JSON.stringify(payload),
   });
 };
+
+export const getMealPlanRequest = async (tokenOverride) => {
+  return fetchWithAuth("/api/meal-plan", { method: "GET" }, tokenOverride);
+};
+
+export const updateMealPlanRequest = async (payload) => {
+  return fetchWithAuth("/api/meal-plan", {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+};
+
+export const getTrainingPlanRequest = async (tokenOverride) => {
+  return fetchWithAuth("/api/training-plan", { method: "GET" }, tokenOverride);
+};
+
+export const updateTrainingPlanRequest = async (payload) => {
+  return fetchWithAuth("/api/training-plan", {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+};

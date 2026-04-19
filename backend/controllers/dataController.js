@@ -1,5 +1,9 @@
 import Day from "../models/Day.js";
+import MealPlan from "../models/MealPlan.js";
+import TrainingPlan from "../models/TrainingPlan.js";
 import WeeklyPlan from "../models/WeeklyPlan.js";
+import { cloneDefaultMealPlan } from "../data/defaultMealPlan.js";
+import { cloneDefaultTrainingPlan } from "../data/defaultTrainingPlan.js";
 import asyncHandler from "../utils/asyncHandler.js";
 
 const normalizeDayPayload = (body = {}) => {
@@ -14,6 +18,23 @@ const normalizeDayPayload = (body = {}) => {
     meals: body.meals ?? {},
     progress: body.progress ?? 0,
     isPerfectDay: body.isPerfectDay ?? false,
+  };
+};
+
+const normalizeMealPlanPayload = (body = {}) => {
+  const fallback = cloneDefaultMealPlan();
+
+  return {
+    estructuraDias: body.estructuraDias ?? fallback.estructuraDias,
+    bloques: body.bloques ?? fallback.bloques,
+  };
+};
+
+const normalizeTrainingPlanPayload = (body = {}) => {
+  const fallback = cloneDefaultTrainingPlan();
+
+  return {
+    routines: body.routines ?? fallback.routines,
   };
 };
 
@@ -96,6 +117,32 @@ export const getWeeklyPlan = asyncHandler(async (req, res) => {
   return res.json({ weeklyPlan });
 });
 
+export const getMealPlan = asyncHandler(async (req, res) => {
+  let mealPlan = await MealPlan.findOne({ user: req.user._id });
+
+  if (!mealPlan) {
+    mealPlan = await MealPlan.create({
+      user: req.user._id,
+      ...cloneDefaultMealPlan(),
+    });
+  }
+
+  return res.json({ mealPlan });
+});
+
+export const getTrainingPlan = asyncHandler(async (req, res) => {
+  let trainingPlan = await TrainingPlan.findOne({ user: req.user._id });
+
+  if (!trainingPlan) {
+    trainingPlan = await TrainingPlan.create({
+      user: req.user._id,
+      ...cloneDefaultTrainingPlan(),
+    });
+  }
+
+  return res.json({ trainingPlan });
+});
+
 export const upsertWeeklyPlan = asyncHandler(async (req, res) => {
   const days = req.body?.days ?? {};
 
@@ -110,4 +157,38 @@ export const upsertWeeklyPlan = asyncHandler(async (req, res) => {
   );
 
   return res.json({ weeklyPlan });
+});
+
+export const upsertMealPlan = asyncHandler(async (req, res) => {
+  const mealPlan = await MealPlan.findOneAndUpdate(
+    { user: req.user._id },
+    {
+      user: req.user._id,
+      ...normalizeMealPlanPayload(req.body),
+    },
+    {
+      new: true,
+      upsert: true,
+      setDefaultsOnInsert: true,
+    }
+  );
+
+  return res.json({ mealPlan });
+});
+
+export const upsertTrainingPlan = asyncHandler(async (req, res) => {
+  const trainingPlan = await TrainingPlan.findOneAndUpdate(
+    { user: req.user._id },
+    {
+      user: req.user._id,
+      ...normalizeTrainingPlanPayload(req.body),
+    },
+    {
+      new: true,
+      upsert: true,
+      setDefaultsOnInsert: true,
+    }
+  );
+
+  return res.json({ trainingPlan });
 });

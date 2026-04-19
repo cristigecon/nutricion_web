@@ -1,3 +1,5 @@
+import { getPlanTypeForDate } from "../utils/plan";
+
 // storage.js
 // Capa de abstracción sobre localStorage para el plan de nutrición/entrenamiento.
 // Esto permitirá cambiar a API remota más tarde con el mismo contrato.
@@ -18,10 +20,12 @@ const notifyStorageChange = () => {
 };
 
 const storage = {
-  setItem(key, value) {
+  setItem(key, value, options = {}) {
     if (typeof window === "undefined" || !window.localStorage) return;
     localStorage.setItem(key, JSON.stringify(value));
-    notifyStorageChange();
+    if (options.notify !== false) {
+      notifyStorageChange();
+    }
   },
 
   getItem(key, fallback = null) {
@@ -47,6 +51,10 @@ const keys = {
   agenda: "nutricion_web_agenda",
   agendaMeta: "nutricion_web_agenda_meta",
   weeklyPlan: "nutricion_web_weekly_plan",
+  mealPlanDefinition: "nutricion_web_meal_plan_definition",
+  mealPlanMeta: "nutricion_web_meal_plan_meta",
+  trainingPlanDefinition: "nutricion_web_training_plan_definition",
+  trainingPlanMeta: "nutricion_web_training_plan_meta",
 };
 
 const reservedDynamicPrefixes = [
@@ -113,6 +121,26 @@ export const saveAgenda = (agenda, options = {}) => {
 
 export const getWeeklyPlan = () => storage.getItem(keys.weeklyPlan, {});
 export const saveWeeklyPlan = (plan) => storage.setItem(keys.weeklyPlan, plan);
+export const getMealPlanDefinition = () => storage.getItem(keys.mealPlanDefinition, null);
+export const saveMealPlanDefinition = (plan, options = {}) => {
+  storage.setItem(keys.mealPlanDefinition, plan, { notify: options.notify });
+
+  if (options.updatedAt) {
+    storage.setItem(keys.mealPlanMeta, { updatedAt: options.updatedAt }, {
+      notify: options.notify,
+    });
+  }
+};
+export const getTrainingPlanDefinition = () => storage.getItem(keys.trainingPlanDefinition, null);
+export const saveTrainingPlanDefinition = (plan, options = {}) => {
+  storage.setItem(keys.trainingPlanDefinition, plan, { notify: options.notify });
+
+  if (options.updatedAt) {
+    storage.setItem(keys.trainingPlanMeta, { updatedAt: options.updatedAt }, {
+      notify: options.notify,
+    });
+  }
+};
 
 export const getMealByName = (date, mealName) =>
   storage.getItem(`nutricion_web_${mealName}_${date}`, {});
@@ -147,7 +175,7 @@ export const buildLocalDayPayload = (date) => {
 
   return {
     date,
-    tipo: baseDay.tipo || "entrenamiento",
+    tipo: getPlanTypeForDate(date),
     selecciones: baseDay.selecciones || {},
     mealChecks: getMealChecks(date) || {},
     workout: getWorkoutByDate(date) || [],
@@ -162,7 +190,7 @@ export const hydrateLocalDay = (day) => {
   if (!day?.date) return;
 
   saveDay(day.date, {
-    tipo: day.tipo || "entrenamiento",
+    tipo: getPlanTypeForDate(day.date),
     selecciones: day.selecciones || {},
   }, { updatedAt: day.updatedAt });
 

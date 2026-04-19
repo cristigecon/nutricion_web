@@ -1,4 +1,4 @@
-export const defaultTrainingPlan = {
+const defaultTrainingPlan = {
   routines: {
     inferior: [
       {
@@ -111,18 +111,7 @@ export const defaultTrainingPlan = {
   },
 };
 
-const clone = (value) => JSON.parse(JSON.stringify(value));
+export const cloneDefaultTrainingPlan = () =>
+  JSON.parse(JSON.stringify(defaultTrainingPlan));
 
-export const normalizeTrainingPlan = (trainingPlan) => {
-  const fallback = clone(defaultTrainingPlan);
-
-  return {
-    routines:
-      trainingPlan?.routines && typeof trainingPlan.routines === "object"
-        ? clone({
-            ...fallback.routines,
-            ...trainingPlan.routines,
-          })
-        : fallback.routines,
-  };
-};
+export default defaultTrainingPlan;

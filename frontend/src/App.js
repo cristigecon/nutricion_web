@@ -7,6 +7,7 @@ import Entrenamiento from "./screens/Entrenamiento";
 import Historial from "./screens/Historial";
 import PlanDia from "./screens/PlanDia";
 import Agenda from "./screens/Agenda";
+import Admin from "./screens/Admin";
 import Login from "./screens/Login";
 import Register from "./screens/Register";
 import { useAuth } from "./context/AuthContext";
@@ -63,12 +64,16 @@ function App() {
   }
 
   if (pantalla === "plandia") {
-  return <PlanDia volver={() => setPantalla("home")} />;
+    return <PlanDia volver={() => setPantalla("home")} />;
   }
-  
+
   if (pantalla === "agenda") {
-  return <Agenda volver={() => setPantalla("home")} />;
-}
+    return <Agenda volver={() => setPantalla("home")} />;
+  }
+
+  if (pantalla === "admin") {
+    return <Admin volver={() => setPantalla("home")} />;
+  }
 
   return <Home setPantalla={setPantalla} />;
 }

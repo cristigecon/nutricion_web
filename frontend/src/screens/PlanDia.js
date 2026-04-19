@@ -1,77 +1,145 @@
 import { useState, useEffect } from "react";
-import { bloques, estructuraDias } from "../data/plan";
+import {
+  getBloqueLabel,
+  getEstructuraDia,
+  getPlanTypeForDate,
+  getSlotLabel,
+  getBloques,
+} from "../services/mealPlan";
 import Bloque from "../components/Bloque";
 import CheckCircle from "../components/CheckCircle";
 import Card from "../components/Card";
 import BotonGuardar from "../components/BotonGuardar";
-
 import { botonVolver } from "../styles/styles";
 import {
-  getAgenda,
+  getDay,
   getMealChecks,
   saveMealChecks,
-  saveDay
+  saveDay,
 } from "../services/storage";
+
+const categoryTitles = {
+  proteina: "Proteina",
+  carbo: "Carbohidrato",
+  fruta: "Fruta",
+  grasa: "Grasa",
+  verduras: "Verduras",
+};
+
+const categoryOrder = ["proteina", "carbo", "fruta", "grasa", "verduras"];
 
 function getFechaHoy() {
   const hoy = new Date();
   return hoy.toISOString().split("T")[0];
 }
 
+const normalizeLegacyChecks = (savedChecks, estructura) => {
+  if (!savedChecks || typeof savedChecks !== "object") {
+    return {};
+  }
+
+  const usesSlotIds = estructura.some((slot) =>
+    Object.prototype.hasOwnProperty.call(savedChecks, slot.id)
+  );
+
+  if (usesSlotIds) {
+    return savedChecks;
+  }
+
+  const nextChecks = {};
+
+  estructura.forEach((slot) => {
+    const matchedLegacyBlock = slot.bloques.find((bloque) =>
+      Object.prototype.hasOwnProperty.call(savedChecks, bloque)
+    );
+
+    if (matchedLegacyBlock) {
+      nextChecks[slot.id] = savedChecks[matchedLegacyBlock];
+    }
+  });
+
+  return nextChecks;
+};
+
+const normalizeLegacySelections = (savedSelections, estructura) => {
+  if (!savedSelections || typeof savedSelections !== "object") {
+    return {};
+  }
+
+  const usesSlotIds = estructura.some((slot) =>
+    Object.prototype.hasOwnProperty.call(savedSelections, slot.id)
+  );
+
+  if (usesSlotIds) {
+    return savedSelections;
+  }
+
+  const nextSelections = {};
+
+  estructura.forEach((slot) => {
+    const matchedLegacyBlock = slot.bloques.find((bloque) => savedSelections[bloque]);
+
+    if (matchedLegacyBlock) {
+      nextSelections[slot.id] = {
+        bloqueSeleccionado: matchedLegacyBlock,
+        ...savedSelections[matchedLegacyBlock],
+      };
+    }
+  });
+
+  return nextSelections;
+};
+
 function PlanDia({ volver }) {
   const fecha = getFechaHoy();
-
-  const diaSemana = new Date(fecha)
-    .toLocaleDateString("es-ES", { weekday: "long" });
-
-  const agenda = getAgenda();
-
-  const datosDia = agenda[diaSemana] || {};
-
-  const hayEntreno =
-    datosDia.entreno && datosDia.entreno !== "descanso";
-
-  const [tipo] = useState(
-    hayEntreno ? "entrenamiento" : "descanso"
-  );
+  const estructura = getEstructuraDia(fecha);
+  const tipo = getPlanTypeForDate(fecha);
+  const bloques = getBloques();
 
   const [abiertos, setAbiertos] = useState({});
   const [selecciones, setSelecciones] = useState({});
   const [checks, setChecks] = useState({});
 
   useEffect(() => {
+    const dayGuardado = getDay(fecha) || {};
     const checksGuardados = getMealChecks(fecha);
-    if (checksGuardados) {
-      setChecks(checksGuardados);
-    }
-  }, [fecha]);
 
-  const toggleCheck = (bloque) => {
+    setSelecciones(normalizeLegacySelections(dayGuardado.selecciones, estructura));
+    setChecks(normalizeLegacyChecks(checksGuardados, estructura));
+  }, [estructura, fecha]);
+
+  const toggleCheck = (slotId) => {
     const nuevos = {
       ...checks,
-      [bloque]: !checks[bloque]
+      [slotId]: !checks[slotId],
     };
 
     setChecks(nuevos);
     saveMealChecks(fecha, nuevos);
   };
 
-  const toggleBloque = (nombre, index) => {
-    const key = nombre + index;
-
+  const toggleBloque = (slotId) => {
     setAbiertos((prev) => ({
       ...prev,
-      [key]: !prev[key]
+      [slotId]: !prev[slotId],
     }));
   };
 
-  const actualizar = (bloque, categoria, valor) => {
+  const actualizarBloqueSeleccionado = (slotId, bloqueSeleccionado) => {
     setSelecciones((prev) => ({
       ...prev,
-      [bloque]: {
-        ...prev[bloque],
-        [categoria]: valor
-      }
+      [slotId]: { bloqueSeleccionado },
+    }));
+  };
+
+  const actualizarSeleccion = (slotId, bloqueSeleccionado, categoria, valor) => {
+    setSelecciones((prev) => ({
+      ...prev,
+      [slotId]: {
+        ...prev[slotId],
+        bloqueSeleccionado,
+        [categoria]: valor,
+      },
     }));
   };
 
@@ -84,110 +152,76 @@ function PlanDia({ volver }) {
       style={{
         padding: 20,
         backgroundColor: "#f2f2f7",
-        minHeight: "100vh"
+        minHeight: "100vh",
       }}
     >
-      {/* VOLVER */}
       <button onClick={volver} style={botonVolver}>
         ← Volver
       </button>
 
-      <h1>Plan del día</h1>
+      <h1>Plan del dia</h1>
 
-      {estructuraDias[tipo].map((item, index) => {
-        const datos = bloques[item.nombre];
-        const key = item.nombre + index;
-        const abierto = abiertos[key];
+      {estructura.map((slot) => {
+        const abierto = abiertos[slot.id];
+        const slotSelection = selecciones[slot.id] || {};
+        const bloqueSeleccionado = slot.bloques.includes(slotSelection.bloqueSeleccionado)
+          ? slotSelection.bloqueSeleccionado
+          : slot.bloques[0];
+        const datosBloque = bloques[bloqueSeleccionado];
 
         return (
-          <div key={index} style={{ marginTop: 15 }}>
-            
-            {/* HEADER */}
-            <Card onClick={() => toggleBloque(item.nombre, index)}>
+          <div key={slot.id} style={{ marginTop: 15 }}>
+            <Card onClick={() => toggleBloque(slot.id)}>
               <span>
-                {item.nombre} ({item.hora})
+                {getSlotLabel(slot)} ({slot.hora})
               </span>
 
               <CheckCircle
-                checked={checks[item.nombre]}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleCheck(item.nombre);
+                checked={Boolean(checks[slot.id])}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  toggleCheck(slot.id);
                 }}
               />
             </Card>
 
-            {/* CONTENIDO */}
             {abierto && (
               <div style={{ marginTop: 10 }}>
-
-                {/* 🔥 CASO ESPECIAL: BLOQUE EXTRA */}
-                {item.nombre === "extra" && (
+                {slot.bloques.length > 1 ? (
                   <Bloque
-                    titulo="Extra"
-                    opciones={bloques.extra}
-                    valor={selecciones[item.nombre]?.extra}
-                    setValor={(v) =>
-                      actualizar(item.nombre, "extra", v)
-                    }
+                    titulo="Elegir bloque"
+                    opciones={slot.bloques.map((bloque) => ({
+                      label: getBloqueLabel(bloque),
+                      value: bloque,
+                    }))}
+                    valor={bloqueSeleccionado}
+                    setValor={(value) => actualizarBloqueSeleccionado(slot.id, value)}
                   />
-                )}
+                ) : null}
 
-                {/* PROTEÍNA */}
-                {datos?.proteina && (
-                  <Bloque
-                    titulo="Proteína"
-                    opciones={datos.proteina}
-                    valor={selecciones[item.nombre]?.proteina}
-                    setValor={(v) =>
-                      actualizar(item.nombre, "proteina", v)
-                    }
-                  />
-                )}
+                {categoryOrder.map((categoria) => {
+                  if (!datosBloque?.[categoria]) {
+                    return null;
+                  }
 
-                {/* CARBO */}
-                {datos?.carbo && (
-                  <Bloque
-                    titulo="Carbohidrato"
-                    opciones={datos.carbo}
-                    valor={selecciones[item.nombre]?.carbo}
-                    setValor={(v) =>
-                      actualizar(item.nombre, "carbo", v)
-                    }
-                  />
-                )}
-
-                {/* GRASA */}
-                {datos?.grasa && (
-                  <Bloque
-                    titulo="Grasa"
-                    opciones={datos.grasa}
-                    valor={selecciones[item.nombre]?.grasa}
-                    setValor={(v) =>
-                      actualizar(item.nombre, "grasa", v)
-                    }
-                  />
-                )}
-
-                {/* VERDURAS */}
-                {datos?.verduras && (
-                  <Bloque
-                    titulo="Verduras"
-                    opciones={datos.verduras}
-                    valor={selecciones[item.nombre]?.verduras}
-                    setValor={(v) =>
-                      actualizar(item.nombre, "verduras", v)
-                    }
-                  />
-                )}
-
+                  return (
+                    <Bloque
+                      key={`${slot.id}-${categoria}`}
+                      titulo={categoryTitles[categoria]}
+                      opciones={datosBloque[categoria]}
+                      valor={slotSelection[categoria]}
+                      setValor={(value) =>
+                        actualizarSeleccion(slot.id, bloqueSeleccionado, categoria, value)
+                      }
+                    />
+                  );
+                })}
               </div>
             )}
           </div>
         );
       })}
 
-      {/* GUARDAR */}
       <BotonGuardar onClick={guardar} />
     </div>
   );

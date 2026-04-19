@@ -1,5 +1,6 @@
 import { theme } from "../styles/theme";
-import { getDay, getMealChecks, getEntrenoCheck, getCardio } from "../services/storage";
+import { getEstructuraDia } from "../services/mealPlan";
+import { getMealChecks, getEntrenoCheck, getCardio } from "../services/storage";
 
 function getUltimos7Dias() {
   const dias = [];
@@ -21,15 +22,10 @@ function GraficoSemanal() {
   const dias = getUltimos7Dias();
 
   const data = dias.map((d) => {
-    const day = getDay(d.fecha) || {};
-
     const checks = getMealChecks(d.fecha) || {};
-
     const entreno = getEntrenoCheck(d.fecha);
-
     const cardio = getCardio(d.fecha);
-
-    const total = day.tipo === "descanso" ? 4 : 6;
+    const total = getEstructuraDia(d.fecha).length + 2;
 
     let completados = 0;
 
