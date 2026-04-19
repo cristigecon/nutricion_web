@@ -49,12 +49,12 @@ Este documento recoge lo completado y lo que queda por hacer.
 - [x] Añadir logout basico y bootstrap de sesion.
 
 ## Fase 5 - Sincronizacion local-first
-- [ ] Mantener localStorage como fuente primaria.
-- [ ] Sincronizar al login con el servidor.
-- [ ] Implementar merge local-server con `updatedAt`.
-- [ ] Debounce de updates para evitar multiples requests inmediatos.
+- [x] Mantener localStorage como fuente primaria.
+- [x] Sincronizar al login con el servidor.
+- [x] Implementar merge local-server con `updatedAt`.
+- [x] Debounce de updates para evitar multiples requests inmediatos.
 - [ ] Manejo de conflictos y resolucion manual.
-- [ ] Manejo offline y reconexion con cola pendiente.
+- [x] Manejo offline y reconexion con cola pendiente.
 
 ## Fase 6 - Endpoints de datos
 - [x] GET `/days`.
@@ -67,20 +67,20 @@ Este documento recoge lo completado y lo que queda por hacer.
 - [x] Tests unitarios para storage y API.
 - [x] Backend tests para auth y data routes.
 - [x] Pruebas de comportamiento base de sincronizacion.
-- [ ] Deploy backend (Railway, Render o similar).
+- [x] Deploy backend (Railway, Render o similar).
 - [ ] Mantener frontend desplegado en Vercel.
 - [ ] Configurar CI/CD basico.
 
 ## Estado actual
-- **Completado**: Fases 0-4 base y bateria inicial de tests.
-- **En progreso**: Fase 5, sincronizacion de datos de negocio.
-- **Pendiente**: endurecer conflictos de sync, deploy y CI/CD.
-- **Bloqueo principal**: Ninguno en auth/Mongo; el siguiente trabajo es preparar produccion y observabilidad de sync.
+- **Completado**: Fases 0-4, endpoints de datos, despliegue del backend y nucleo de sincronizacion local-first.
+- **En progreso**: endurecer conflictos de sync y cerrar el hardening de produccion.
+- **Pendiente**: resolucion manual de conflictos, despliegue estable del frontend y CI/CD.
+- **Bloqueo principal**: Ninguno en auth/Mongo; el siguiente trabajo es resolver conflictos de sync y observabilidad.
 
 ## Resumen rapido
 - Abstraccion de storage completada.
 - Backend de auth funcionando con Mongo.
 - Frontend con login/registro y sesion persistente.
 - Endpoints de `days` y `weekly-plan` ya creados.
-- Sync local-first funcional con estado visible.
+- Sync local-first funcional con estado visible, soporte offline y reintento al reconectar.
 - Tests de backend y frontend pasando.

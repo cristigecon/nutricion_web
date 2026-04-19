@@ -1,6 +1,4 @@
-import { getBloqueLabel, getPlanTypeForDate } from "../utils/plan";
-
-export const defaultMealPlan = {
+const defaultMealPlan = {
   estructuraDias: {
     semana: [
       { id: "comida_1", hora: "06:30", bloques: ["bloque1"] },
@@ -126,30 +124,6 @@ export const defaultMealPlan = {
   },
 };
 
-const clone = (value) => JSON.parse(JSON.stringify(value));
+export const cloneDefaultMealPlan = () => JSON.parse(JSON.stringify(defaultMealPlan));
 
-export const normalizeMealPlan = (mealPlan) => {
-  const fallback = clone(defaultMealPlan);
-
-  return {
-    estructuraDias:
-      mealPlan?.estructuraDias && typeof mealPlan.estructuraDias === "object"
-        ? clone(mealPlan.estructuraDias)
-        : fallback.estructuraDias,
-    bloques:
-      mealPlan?.bloques && typeof mealPlan.bloques === "object"
-        ? clone(mealPlan.bloques)
-        : fallback.bloques,
-  };
-};
-
-export const getEstructuraDiaFromMealPlan = (dateString, mealPlan) => {
-  const normalizedPlan = normalizeMealPlan(mealPlan);
-  return normalizedPlan.estructuraDias[getPlanTypeForDate(dateString)] || [];
-};
-
-export const getSlotLabel = (slot) => {
-  return slot.bloques.map(getBloqueLabel).join(" o ");
-};
-
-export { getBloqueLabel, getPlanTypeForDate };
+export default defaultMealPlan;

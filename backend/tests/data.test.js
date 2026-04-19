@@ -3,6 +3,8 @@ import jwt from "jsonwebtoken";
 import createApp from "../app.js";
 import User from "../models/User.js";
 import Day from "../models/Day.js";
+import MealPlan from "../models/MealPlan.js";
+import TrainingPlan from "../models/TrainingPlan.js";
 import WeeklyPlan from "../models/WeeklyPlan.js";
 import { startTestServer } from "./helpers/httpTestServer.js";
 import { createJsonRequest, mockMethod } from "./helpers/mockUtils.js";
@@ -26,6 +28,10 @@ export const runDataTests = async () => {
   await testGetDayByDate();
   await testGetDaysRejectsMissingToken();
   await testUpdateDay();
+  await testGetMealPlanSeedsDefault();
+  await testUpsertMealPlan();
+  await testGetTrainingPlanSeedsDefault();
+  await testUpsertTrainingPlan();
   await testUpsertWeeklyPlan();
 };
 
@@ -286,6 +292,172 @@ const testUpsertWeeklyPlan = async () => {
     assert.equal(response.status, 200);
     assert.equal(data.weeklyPlan.user, "user-1");
     assert.equal(data.weeklyPlan.days.lunes.entreno, "superior");
+  } finally {
+    restoreFindById();
+    restoreFindOneAndUpdate();
+    await server.close();
+  }
+};
+
+const testGetMealPlanSeedsDefault = async () => {
+  const app = createApp();
+  const server = await startTestServer(app);
+  const token = jwt.sign({ id: "user-1" }, process.env.JWT_SECRET);
+
+  const restoreFindById = setupAuthenticatedUser();
+  const restoreFindOne = mockMethod(MealPlan, "findOne", async () => null);
+  const restoreCreate = mockMethod(MealPlan, "create", async (payload) => ({
+    _id: "meal-plan-1",
+    ...payload,
+  }));
+
+  try {
+    const response = await createJsonRequest(server.baseUrl, "/api/meal-plan", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const data = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(data.mealPlan.user, "user-1");
+    assert.equal(data.mealPlan.estructuraDias.semana.length, 5);
+    assert.equal(data.mealPlan.estructuraDias.finde.length, 4);
+    assert.equal(data.mealPlan.bloques.bloque3.fruta[0], "300g pina en su jugo");
+  } finally {
+    restoreFindById();
+    restoreFindOne();
+    restoreCreate();
+    await server.close();
+  }
+};
+
+const testUpsertMealPlan = async () => {
+  const app = createApp();
+  const server = await startTestServer(app);
+  const token = jwt.sign({ id: "user-1" }, process.env.JWT_SECRET);
+
+  const restoreFindById = setupAuthenticatedUser();
+  const restoreFindOneAndUpdate = mockMethod(
+    MealPlan,
+    "findOneAndUpdate",
+    async (_filter, update) => ({
+      _id: "meal-plan-1",
+      user: update.user,
+      estructuraDias: update.estructuraDias,
+      bloques: update.bloques,
+    })
+  );
+
+  try {
+    const response = await createJsonRequest(server.baseUrl, "/api/meal-plan", {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        estructuraDias: {
+          semana: [{ id: "uno", hora: "08:00", bloques: ["bloque1"] }],
+          finde: [{ id: "dos", hora: "12:00", bloques: ["bloque4"] }],
+        },
+        bloques: {
+          bloque1: {
+            proteina: ["opcion personalizada"],
+          },
+        },
+      }),
+    });
+    const data = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(data.mealPlan.user, "user-1");
+    assert.equal(data.mealPlan.estructuraDias.semana[0].hora, "08:00");
+    assert.equal(data.mealPlan.bloques.bloque1.proteina[0], "opcion personalizada");
+  } finally {
+    restoreFindById();
+    restoreFindOneAndUpdate();
+    await server.close();
+  }
+};
+
+const testGetTrainingPlanSeedsDefault = async () => {
+  const app = createApp();
+  const server = await startTestServer(app);
+  const token = jwt.sign({ id: "user-1" }, process.env.JWT_SECRET);
+
+  const restoreFindById = setupAuthenticatedUser();
+  const restoreFindOne = mockMethod(TrainingPlan, "findOne", async () => null);
+  const restoreCreate = mockMethod(TrainingPlan, "create", async (payload) => ({
+    _id: "training-plan-1",
+    ...payload,
+  }));
+
+  try {
+    const response = await createJsonRequest(server.baseUrl, "/api/training-plan", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const data = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(data.trainingPlan.user, "user-1");
+    assert.equal(data.trainingPlan.routines.inferior.length, 7);
+    assert.equal(data.trainingPlan.routines.superior.length, 6);
+    assert.equal(data.trainingPlan.routines.inferior[0].nombre, "Sentadilla goblet");
+  } finally {
+    restoreFindById();
+    restoreFindOne();
+    restoreCreate();
+    await server.close();
+  }
+};
+
+const testUpsertTrainingPlan = async () => {
+  const app = createApp();
+  const server = await startTestServer(app);
+  const token = jwt.sign({ id: "user-1" }, process.env.JWT_SECRET);
+
+  const restoreFindById = setupAuthenticatedUser();
+  const restoreFindOneAndUpdate = mockMethod(
+    TrainingPlan,
+    "findOneAndUpdate",
+    async (_filter, update) => ({
+      _id: "training-plan-1",
+      user: update.user,
+      routines: update.routines,
+    })
+  );
+
+  try {
+    const response = await createJsonRequest(server.baseUrl, "/api/training-plan", {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        routines: {
+          superior: [
+            {
+              nombre: "Press militar",
+              imagen: "/img/custom.png",
+              series: 3,
+              reps: "12",
+              cadencia: "2",
+              descanso: "45",
+            },
+          ],
+        },
+      }),
+    });
+    const data = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(data.trainingPlan.user, "user-1");
+    assert.equal(data.trainingPlan.routines.superior[0].nombre, "Press militar");
+    assert.equal(data.trainingPlan.routines.superior[0].descanso, "45");
   } finally {
     restoreFindById();
     restoreFindOneAndUpdate();

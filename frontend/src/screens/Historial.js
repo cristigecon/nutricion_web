@@ -1,9 +1,9 @@
 import Card from "../components/Card";
 import { botonVolver } from "../styles/styles";
 import { theme } from "../styles/theme";
-import { estructuraDias } from "../data/plan";
+import { getEstructuraDia } from "../services/mealPlan";
 import GraficoSemanal from "../components/GraficoSemanal";
-import { getMealChecks, getEntrenoCheck, getCardio, getDay, getAllDayDates } from "../services/storage";
+import { getMealChecks, getEntrenoCheck, getCardio, getAllDayDates } from "../services/storage";
 
 function Historial({ volver }) {
   const datos = [];
@@ -11,15 +11,10 @@ function Historial({ volver }) {
   const fechas = getAllDayDates();
 
   fechas.forEach((fecha) => {
-    const plan = getDay(fecha) || {};
     const checks = getMealChecks(fecha) || {};
-
     const entreno = getEntrenoCheck(fecha);
     const cardio = getCardio(fecha);
-
-    const tipo = plan.tipo || "entrenamiento";
-
-    const total = estructuraDias[tipo].length + 2;
+    const total = getEstructuraDia(fecha).length + 2;
 
     let completados = 0;
 

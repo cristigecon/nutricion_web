@@ -5,11 +5,19 @@ function Bloque({ titulo, opciones, valor, setValor }) {
   const contentRef = useRef(null);
   const [height, setHeight] = useState(0);
 
+  const normalizedOptions = opciones.map((opcion) => {
+    if (typeof opcion === "string") {
+      return { label: opcion, value: opcion };
+    }
+
+    return opcion;
+  });
+
   useEffect(() => {
     if (contentRef.current) {
       setHeight(abierto ? contentRef.current.scrollHeight : 0);
     }
-  }, [abierto]);
+  }, [abierto, normalizedOptions.length]);
 
   return (
     <div style={{ marginTop: 15 }}>
@@ -49,13 +57,13 @@ function Bloque({ titulo, opciones, valor, setValor }) {
       >
         <div ref={contentRef}>
           <div style={{ marginTop: 10 }}>
-            {opciones.map((opcion) => {
-              const seleccionado = valor === opcion;
+            {normalizedOptions.map((opcion) => {
+              const seleccionado = valor === opcion.value;
 
               return (
                 <div
-                  key={opcion}
-                  onClick={() => setValor(opcion)}
+                  key={opcion.value}
+                  onClick={() => setValor(opcion.value)}
                   style={{
                     padding: 12,
                     marginBottom: 8,
@@ -67,7 +75,7 @@ function Bloque({ titulo, opciones, valor, setValor }) {
                     transition: "0.2s"
                   }}
                 >
-                  {opcion}
+                  {opcion.label}
                 </div>
               );
             })}

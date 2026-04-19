@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" role="img" aria-labelledby="title desc">
+  <title id="title">Ejercicio</title>
+  <desc id="desc">Ilustracion generica para un ejercicio sin imagen especifica.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#eef4ff" />
+      <stop offset="100%" stop-color="#f7f9fc" />
+    </linearGradient>
+  </defs>
+  <rect width="320" height="200" rx="24" fill="url(#bg)" />
+  <g fill="none" stroke="#6f7f95" stroke-linecap="round" stroke-linejoin="round" stroke-width="10">
+    <path d="M92 112h32" />
+    <path d="M196 112h32" />
+    <path d="M124 112l20-28h32l20 28" />
+    <path d="M144 84l-14-18" />
+    <path d="M176 84l14-18" />
+    <path d="M116 96v32" />
+    <path d="M204 96v32" />
+  </g>
+  <text x="160" y="164" font-family="Arial, sans-serif" font-size="22" font-weight="700" text-anchor="middle" fill="#4e5d72">
+    Ejercicio
+  </text>
+</svg>
