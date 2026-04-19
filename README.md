@@ -102,6 +102,7 @@ npm run test:ci
 - Frontend con estado de sincronizacion visible.
 - Merge basico por `updatedAt` ya integrado.
 - Tests de backend y frontend pasando.
+  ddd
 
 ## Siguiente trabajo recomendado
 
