@@ -60,6 +60,8 @@ REACT_APP_API_URL=http://localhost:5000
 
 Para una build de produccion, `REACT_APP_API_URL` debe apuntar a la URL publica del backend, por ejemplo `https://tu-backend.onrender.com`. Si no se define, el frontend intentara usar el mismo dominio desde el que se sirve la app, y solo en local hara fallback a `http://localhost:5000`.
 
+Si despliegas el frontend en Vercel con `frontend/` como raiz del proyecto, puedes apoyarte en `frontend/vercel.json` para reenviar `/api/*` al backend publico. Aun asi, sigue siendo recomendable definir `REACT_APP_API_URL` en Vercel para que la configuracion quede explicita.
+
 Arranque:
 
 ```bash
