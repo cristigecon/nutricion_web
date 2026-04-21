@@ -6,8 +6,42 @@ import {
   setUser,
 } from "./storage";
 
-const API_BASE_URL =
-  process.env.REACT_APP_API_URL?.replace(/\/$/, "") || "http://localhost:5000";
+const LOCAL_API_BASE_URL = "http://localhost:5000";
+
+const trimTrailingSlash = (value = "") => value.replace(/\/$/, "");
+
+export const resolveApiBaseUrl = ({
+  envBaseUrl = process.env.REACT_APP_API_URL?.trim() || "",
+  location = typeof window === "undefined" ? undefined : window.location,
+  nodeEnv = process.env.NODE_ENV,
+} = {}) => {
+  const normalizedEnvBaseUrl = trimTrailingSlash(envBaseUrl);
+
+  if (normalizedEnvBaseUrl) {
+    return normalizedEnvBaseUrl;
+  }
+
+  if (!location) {
+    return LOCAL_API_BASE_URL;
+  }
+
+  const { hostname, origin } = location;
+  const isLocalEnvironment = hostname === "localhost" || hostname === "127.0.0.1";
+
+  if (isLocalEnvironment) {
+    return LOCAL_API_BASE_URL;
+  }
+
+  if (nodeEnv === "production") {
+    console.warn(
+      "REACT_APP_API_URL no esta definida. Se usara el mismo origen para las peticiones API."
+    );
+  }
+
+  return trimTrailingSlash(origin);
+};
+
+const API_BASE_URL = resolveApiBaseUrl();
 
 const parseResponse = async (response) => {
   const raw = await response.text();
