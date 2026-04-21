@@ -4,11 +4,9 @@ import {
   getMealPlanRequest,
   getTrainingPlanRequest,
   loginRequest,
+  resolveApiBaseUrl,
 } from "./api";
 import * as storage from "./storage";
-
-const API_BASE_URL =
-  process.env.REACT_APP_API_URL?.replace(/\/$/, "") || "http://localhost:5000";
 
 describe("api service", () => {
   beforeEach(() => {
@@ -20,7 +18,44 @@ describe("api service", () => {
     delete global.fetch;
   });
 
+  it("usa la URL configurada por entorno si existe", () => {
+    expect(resolveApiBaseUrl({ envBaseUrl: "https://api.example.com/" })).toBe(
+      "https://api.example.com"
+    );
+  });
+
+  it("usa localhost por defecto en entorno local cuando no hay env", () => {
+    expect(
+      resolveApiBaseUrl({
+        envBaseUrl: "",
+        location: {
+          hostname: "localhost",
+          origin: "http://localhost:3000",
+        },
+      })
+    ).toBe("http://localhost:5000");
+  });
+
+  it("usa el mismo origen en produccion cuando no hay env", () => {
+    const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+
+    expect(
+      resolveApiBaseUrl({
+        envBaseUrl: "",
+        location: {
+          hostname: "app.example.com",
+          origin: "https://app.example.com",
+        },
+        nodeEnv: "production",
+      })
+    ).toBe("https://app.example.com");
+
+    expect(warnSpy).toHaveBeenCalled();
+    warnSpy.mockRestore();
+  });
+
   it("incluye el bearer token en fetchWithAuth", async () => {
+    const apiBaseUrl = resolveApiBaseUrl();
     jest.spyOn(storage, "getAuthToken").mockReturnValue("token-123");
     global.fetch.mockResolvedValue({
       ok: true,
@@ -30,7 +65,7 @@ describe("api service", () => {
     await fetchWithAuth("/api/days", { method: "GET" });
 
     expect(global.fetch).toHaveBeenCalledWith(
-      `${API_BASE_URL}/api/days`,
+      `${apiBaseUrl}/api/days`,
       expect.objectContaining({
         method: "GET",
         headers: expect.objectContaining({
@@ -77,6 +112,7 @@ describe("api service", () => {
   });
 
   it("solicita el plan maestro autenticado", async () => {
+    const apiBaseUrl = resolveApiBaseUrl();
     jest.spyOn(storage, "getAuthToken").mockReturnValue("token-123");
     global.fetch.mockResolvedValue({
       ok: true,
@@ -86,7 +122,7 @@ describe("api service", () => {
     await getMealPlanRequest();
 
     expect(global.fetch).toHaveBeenCalledWith(
-      `${API_BASE_URL}/api/meal-plan`,
+      `${apiBaseUrl}/api/meal-plan`,
       expect.objectContaining({
         method: "GET",
         headers: expect.objectContaining({
@@ -97,6 +133,7 @@ describe("api service", () => {
   });
 
   it("solicita la rutina maestra autenticada", async () => {
+    const apiBaseUrl = resolveApiBaseUrl();
     jest.spyOn(storage, "getAuthToken").mockReturnValue("token-123");
     global.fetch.mockResolvedValue({
       ok: true,
@@ -106,7 +143,7 @@ describe("api service", () => {
     await getTrainingPlanRequest();
 
     expect(global.fetch).toHaveBeenCalledWith(
-      `${API_BASE_URL}/api/training-plan`,
+      `${apiBaseUrl}/api/training-plan`,
       expect.objectContaining({
         method: "GET",
         headers: expect.objectContaining({
