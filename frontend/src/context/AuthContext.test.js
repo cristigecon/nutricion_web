@@ -112,6 +112,9 @@ describe("AuthContext", () => {
       expect(screen.getByText("auth:true")).toBeInTheDocument();
       expect(screen.getByText("status:success")).toBeInTheDocument();
     });
+
+    expect(api.getCurrentUser).not.toHaveBeenCalled();
+    expect(sync.syncLocalFirstData).toHaveBeenCalledTimes(1);
   });
 
   it("restaura una sesion existente y sincroniza al arrancar", async () => {

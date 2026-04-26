@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useEffectEvent, useState } from "react";
+import { createContext, useContext, useEffect, useEffectEvent, useRef, useState } from "react";
 import {
   clearSession,
   getCurrentUser,
@@ -56,6 +56,7 @@ export function AuthProvider({ children }) {
   const [lastSyncedAt, setLastSyncedAt] = useState(null);
   const [hasPendingSync, setHasPendingSync] = useState(false);
   const [isOnline, setIsOnline] = useState(() => isBrowserOnline());
+  const skipNextBootstrapRef = useRef(false);
 
   const setOfflineState = ({
     pending = false,
@@ -187,6 +188,12 @@ export function AuthProvider({ children }) {
         return;
       }
 
+      if (skipNextBootstrapRef.current) {
+        skipNextBootstrapRef.current = false;
+        setIsBootstrapping(false);
+        return;
+      }
+
       if (!isBrowserOnline()) {
         setOfflineState();
         setIsBootstrapping(false);
@@ -228,16 +235,20 @@ export function AuthProvider({ children }) {
     }
 
     const handleStorageChanged = () => {
+      if (!getAuthToken()) {
+        return;
+      }
+
       if (!isBrowserOnline()) {
         setOfflineState({
           pending: true,
           message: "Sin conexion. Los cambios se sincronizaran al reconectar.",
         });
         return;
-        }
+      }
 
-        scheduleSync(1200, runLocalDataSyncEffect);
-      };
+      scheduleSync(1200, runLocalDataSyncEffect);
+    };
 
     window.addEventListener("nutricion_web:storage-changed", handleStorageChanged);
 
@@ -288,6 +299,7 @@ export function AuthProvider({ children }) {
 
   const login = async (credentials) => {
     const data = await loginRequest(credentials);
+    skipNextBootstrapRef.current = true;
     setUser(data.user);
     setToken(data.token);
     await runSync(data.token);
@@ -296,6 +308,7 @@ export function AuthProvider({ children }) {
 
   const register = async (credentials) => {
     const data = await registerRequest(credentials);
+    skipNextBootstrapRef.current = true;
     setUser(data.user);
     setToken(data.token);
     await runSync(data.token);
@@ -304,6 +317,7 @@ export function AuthProvider({ children }) {
 
   const logout = () => {
     clearSession();
+    skipNextBootstrapRef.current = false;
     setUser(null);
     setToken(null);
     setSyncStatus("idle");
