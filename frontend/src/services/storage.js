@@ -68,12 +68,12 @@ const reservedDynamicPrefixes = [
 
 const getIsoNow = () => new Date().toISOString();
 
-const touchDayMeta = (date, updatedAt = getIsoNow()) => {
-  storage.setItem(keys.dayMeta(date), { updatedAt });
+const touchDayMeta = (date, updatedAt = getIsoNow(), options = {}) => {
+  storage.setItem(keys.dayMeta(date), { updatedAt }, { notify: options.notify });
 };
 
-const touchAgendaMeta = (updatedAt = getIsoNow()) => {
-  storage.setItem(keys.agendaMeta, { updatedAt });
+const touchAgendaMeta = (updatedAt = getIsoNow(), options = {}) => {
+  storage.setItem(keys.agendaMeta, { updatedAt }, { notify: options.notify });
 };
 
 export const getUser = () => storage.getItem(keys.user, null);
@@ -85,38 +85,38 @@ export const removeAuthToken = () => storage.removeItem(keys.authToken);
 
 export const getDay = (date) => storage.getItem(keys.day(date), null);
 export const saveDay = (date, payload, options = {}) => {
-  storage.setItem(keys.day(date), payload);
-  touchDayMeta(date, options.updatedAt);
+  storage.setItem(keys.day(date), payload, { notify: options.notify });
+  touchDayMeta(date, options.updatedAt, { notify: options.notify });
 };
 
 export const getMealChecks = (date) => storage.getItem(keys.mealChecks(date), []);
 export const saveMealChecks = (date, checks, options = {}) => {
-  storage.setItem(keys.mealChecks(date), checks);
-  touchDayMeta(date, options.updatedAt);
+  storage.setItem(keys.mealChecks(date), checks, { notify: options.notify });
+  touchDayMeta(date, options.updatedAt, { notify: options.notify });
 };
 
 export const getWorkoutByDate = (date) => storage.getItem(keys.workout(date), null);
 export const saveWorkoutByDate = (date, workout, options = {}) => {
-  storage.setItem(keys.workout(date), workout);
-  touchDayMeta(date, options.updatedAt);
+  storage.setItem(keys.workout(date), workout, { notify: options.notify });
+  touchDayMeta(date, options.updatedAt, { notify: options.notify });
 };
 
 export const getEntrenoCheck = (date) => storage.getItem(`nutricion_web_entreno_check_${date}`, false);
 export const setEntrenoCheck = (date, value, options = {}) => {
-  storage.setItem(`nutricion_web_entreno_check_${date}`, value);
-  touchDayMeta(date, options.updatedAt);
+  storage.setItem(`nutricion_web_entreno_check_${date}`, value, { notify: options.notify });
+  touchDayMeta(date, options.updatedAt, { notify: options.notify });
 };
 
 export const getCardio = (date) => storage.getItem(`nutricion_web_cardio_${date}`, false);
 export const setCardio = (date, value, options = {}) => {
-  storage.setItem(`nutricion_web_cardio_${date}`, value);
-  touchDayMeta(date, options.updatedAt);
+  storage.setItem(`nutricion_web_cardio_${date}`, value, { notify: options.notify });
+  touchDayMeta(date, options.updatedAt, { notify: options.notify });
 };
 
 export const getAgenda = () => storage.getItem(keys.agenda, {});
 export const saveAgenda = (agenda, options = {}) => {
-  storage.setItem(keys.agenda, agenda);
-  touchAgendaMeta(options.updatedAt);
+  storage.setItem(keys.agenda, agenda, { notify: options.notify });
+  touchAgendaMeta(options.updatedAt, { notify: options.notify });
 };
 
 export const getWeeklyPlan = () => storage.getItem(keys.weeklyPlan, {});
@@ -145,8 +145,8 @@ export const saveTrainingPlanDefinition = (plan, options = {}) => {
 export const getMealByName = (date, mealName) =>
   storage.getItem(`nutricion_web_${mealName}_${date}`, {});
 export const saveMealByName = (date, mealName, payload, options = {}) => {
-  storage.setItem(`nutricion_web_${mealName}_${date}`, payload);
-  touchDayMeta(date, options.updatedAt);
+  storage.setItem(`nutricion_web_${mealName}_${date}`, payload, { notify: options.notify });
+  touchDayMeta(date, options.updatedAt, { notify: options.notify });
 };
 
 export const getMealEntriesByDate = (date) => {
@@ -186,21 +186,36 @@ export const buildLocalDayPayload = (date) => {
   };
 };
 
-export const hydrateLocalDay = (day) => {
+export const hydrateLocalDay = (day, options = {}) => {
   if (!day?.date) return;
 
   saveDay(day.date, {
     tipo: getPlanTypeForDate(day.date),
     selecciones: day.selecciones || {},
-  }, { updatedAt: day.updatedAt });
+  }, { updatedAt: day.updatedAt, notify: options.notify });
 
-  saveMealChecks(day.date, day.mealChecks || {}, { updatedAt: day.updatedAt });
-  saveWorkoutByDate(day.date, day.workout || [], { updatedAt: day.updatedAt });
-  setCardio(day.date, Boolean(day.cardio), { updatedAt: day.updatedAt });
-  setEntrenoCheck(day.date, Boolean(day.entrenoCheck), { updatedAt: day.updatedAt });
+  saveMealChecks(day.date, day.mealChecks || {}, {
+    updatedAt: day.updatedAt,
+    notify: options.notify,
+  });
+  saveWorkoutByDate(day.date, day.workout || [], {
+    updatedAt: day.updatedAt,
+    notify: options.notify,
+  });
+  setCardio(day.date, Boolean(day.cardio), {
+    updatedAt: day.updatedAt,
+    notify: options.notify,
+  });
+  setEntrenoCheck(day.date, Boolean(day.entrenoCheck), {
+    updatedAt: day.updatedAt,
+    notify: options.notify,
+  });
 
   Object.entries(day.meals || {}).forEach(([mealName, payload]) => {
-    saveMealByName(day.date, mealName, payload || {}, { updatedAt: day.updatedAt });
+    saveMealByName(day.date, mealName, payload || {}, {
+      updatedAt: day.updatedAt,
+      notify: options.notify,
+    });
   });
 };
 

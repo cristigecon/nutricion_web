@@ -81,7 +81,8 @@ describe("sync service", () => {
     await syncLocalFirstData();
 
     expect(hydrateLocalDay).toHaveBeenCalledWith(
-      expect.objectContaining({ _id: "day-1", date: "2026-04-12" })
+      expect.objectContaining({ _id: "day-1", date: "2026-04-12" }),
+      { notify: false }
     );
     expect(updateDayRequest).not.toHaveBeenCalled();
   });
@@ -102,7 +103,7 @@ describe("sync service", () => {
 
     expect(saveAgenda).toHaveBeenCalledWith(
       { lunes: { entreno: "superior" } },
-      { updatedAt: "2026-04-12T12:00:00.000Z" }
+      { updatedAt: "2026-04-12T12:00:00.000Z", notify: false }
     );
   });
 

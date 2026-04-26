@@ -49,14 +49,14 @@ export const syncLocalFirstData = async () => {
       } else if (localUpdatedAt >= remoteUpdatedAt) {
         await updateDayRequest(remoteDay._id, localPayload);
       } else {
-        hydrateLocalDay(remoteDay);
+        hydrateLocalDay(remoteDay, { notify: false });
       }
     }
   }
 
   remoteDays.forEach((remoteDay) => {
     if (!localDates.includes(remoteDay.date)) {
-      hydrateLocalDay(remoteDay);
+      hydrateLocalDay(remoteDay, { notify: false });
     }
   });
 
@@ -68,6 +68,7 @@ export const syncLocalFirstData = async () => {
   } else if (hasAnyOwnKey(weeklyPlanResponse.weeklyPlan?.days)) {
     saveAgenda(weeklyPlanResponse.weeklyPlan.days, {
       updatedAt: weeklyPlanResponse.weeklyPlan.updatedAt,
+      notify: false,
     });
   }
 };
