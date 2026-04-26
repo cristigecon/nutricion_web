@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useEffectEvent, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import {
   clearSession,
   getCurrentUser,
@@ -58,7 +58,7 @@ export function AuthProvider({ children }) {
   const [isOnline, setIsOnline] = useState(() => isBrowserOnline());
   const skipNextBootstrapRef = useRef(false);
 
-  const setOfflineState = ({
+  const setOfflineState = useCallback(({
     pending = false,
     message = "Sin conexion. Puedes seguir usando los datos locales.",
   } = {}) => {
@@ -69,9 +69,9 @@ export function AuthProvider({ children }) {
     if (pending) {
       setHasPendingSync(true);
     }
-  };
+  }, []);
 
-  const refreshMealPlan = async (tokenOverride) => {
+  const refreshMealPlan = useCallback(async (tokenOverride) => {
     const sessionToken = tokenOverride || token || getAuthToken();
 
     if (!sessionToken) {
@@ -87,9 +87,9 @@ export function AuthProvider({ children }) {
       notify: false,
       updatedAt: data.mealPlan?.updatedAt,
     });
-  };
+  }, [token]);
 
-  const refreshTrainingPlan = async (tokenOverride) => {
+  const refreshTrainingPlan = useCallback(async (tokenOverride) => {
     const sessionToken = tokenOverride || token || getAuthToken();
 
     if (!sessionToken) {
@@ -105,9 +105,9 @@ export function AuthProvider({ children }) {
       notify: false,
       updatedAt: data.trainingPlan?.updatedAt,
     });
-  };
+  }, [token]);
 
-  const runLocalDataSync = async (tokenOverride) => {
+  const runLocalDataSync = useCallback(async (tokenOverride) => {
     const sessionToken = tokenOverride || token || getAuthToken();
 
     if (!sessionToken) {
@@ -144,9 +144,9 @@ export function AuthProvider({ children }) {
       setSyncError(error.message || "Error de sincronizacion");
       throw error;
     }
-  };
+  }, [setOfflineState, token]);
 
-  const runSync = async (tokenOverride) => {
+  const runSync = useCallback(async (tokenOverride) => {
     const sessionToken = tokenOverride || token || getAuthToken();
 
     if (!sessionToken) {
@@ -170,12 +170,7 @@ export function AuthProvider({ children }) {
 
       throw error;
     }
-  };
-
-  const runSyncEffect = useEffectEvent((tokenOverride) => runSync(tokenOverride));
-  const runLocalDataSyncEffect = useEffectEvent((tokenOverride) =>
-    runLocalDataSync(tokenOverride)
-  );
+  }, [refreshMealPlan, refreshTrainingPlan, runLocalDataSync, setOfflineState, token]);
 
   useEffect(() => {
     const bootstrapAuth = async () => {
@@ -203,7 +198,7 @@ export function AuthProvider({ children }) {
       try {
         const data = await getCurrentUser(token);
         setUser(data.user);
-        await runSyncEffect();
+        await runSync(token);
       } catch (error) {
         if (isConnectivityError(error)) {
           setOfflineState();
@@ -227,7 +222,7 @@ export function AuthProvider({ children }) {
     };
 
     bootstrapAuth();
-  }, [token]);
+  }, [runSync, setOfflineState, token]);
 
   useEffect(() => {
     if (!token || typeof window === "undefined") {
@@ -247,7 +242,7 @@ export function AuthProvider({ children }) {
         return;
       }
 
-      scheduleSync(1200, runLocalDataSyncEffect);
+      scheduleSync(1200, runLocalDataSync);
     };
 
     window.addEventListener("nutricion_web:storage-changed", handleStorageChanged);
@@ -255,7 +250,7 @@ export function AuthProvider({ children }) {
     return () => {
       window.removeEventListener("nutricion_web:storage-changed", handleStorageChanged);
     };
-  }, [token]);
+  }, [runLocalDataSync, setOfflineState, token]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -270,7 +265,7 @@ export function AuthProvider({ children }) {
       }
 
       if (hasPendingSync || syncStatus === "offline") {
-        Promise.resolve(runSyncEffect()).catch(() => {});
+        Promise.resolve(runSync()).catch(() => {});
       }
     };
 
@@ -295,7 +290,7 @@ export function AuthProvider({ children }) {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
-  }, [hasPendingSync, syncStatus, token]);
+  }, [hasPendingSync, runSync, setOfflineState, syncStatus, token]);
 
   const login = async (credentials) => {
     const data = await loginRequest(credentials);
