@@ -227,7 +227,7 @@ export function AuthProvider({ children }) {
     };
 
     bootstrapAuth();
-  }, [runSyncEffect, token]);
+  }, [token]);
 
   useEffect(() => {
     if (!token || typeof window === "undefined") {
@@ -255,7 +255,7 @@ export function AuthProvider({ children }) {
     return () => {
       window.removeEventListener("nutricion_web:storage-changed", handleStorageChanged);
     };
-  }, [runLocalDataSyncEffect, token]);
+  }, [token]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -295,7 +295,7 @@ export function AuthProvider({ children }) {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
-  }, [hasPendingSync, runSyncEffect, syncStatus, token]);
+  }, [hasPendingSync, syncStatus, token]);
 
   const login = async (credentials) => {
     const data = await loginRequest(credentials);
