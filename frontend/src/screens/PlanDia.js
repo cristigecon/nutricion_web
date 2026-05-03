@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   getBloqueLabel,
   getEstructuraDia,
@@ -92,9 +92,9 @@ const normalizeLegacySelections = (savedSelections, estructura) => {
 
 function PlanDia({ volver }) {
   const fecha = getFechaHoy();
-  const estructura = getEstructuraDia(fecha);
-  const tipo = getPlanTypeForDate(fecha);
-  const bloques = getBloques();
+  const estructura = useMemo(() => getEstructuraDia(fecha), [fecha]);
+  const tipo = useMemo(() => getPlanTypeForDate(fecha), [fecha]);
+  const bloques = useMemo(() => getBloques(), []);
 
   const [abiertos, setAbiertos] = useState({});
   const [selecciones, setSelecciones] = useState({});
